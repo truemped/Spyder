@@ -28,10 +28,10 @@ It basically searches for
    phpsessionid=
    aspsessionid=
 """
-from spyder.core.constants import CURI_EXTRACTED_URLS
+from spyder.processor.stripqueryparams import StripQueryParams
 
 
-class StripSessionIds(object):
+class StripSessionIds(StripQueryParams):
     """
     The processor for removing session information from the query string.
     """
@@ -40,37 +40,7 @@ class StripSessionIds(object):
         """
         Initialize me.
         """
-        self._session_params = ['jsessionid=', 'phpsessid=',
+        super(StripSessionIds, self).__init__(settings)
+
+        self._query_params = ['jsessionid=', 'phpsessid=',
             'aspsessionid=', 'sid=']
-
-    def __call__(self, curi):
-        """
-        Main method stripping the session stuff from the query string.
-        """
-        if CURI_EXTRACTED_URLS not in curi.optional_vars:
-            return curi
-
-        urls = []
-        for raw_url in curi.optional_vars[CURI_EXTRACTED_URLS].split('\n'):
-            urls.append(self._remove_session_ids(raw_url))
-
-        curi.optional_vars[CURI_EXTRACTED_URLS] = "\n".join(urls)
-        return curi
-
-    def _remove_session_ids(self, raw_url):
-        """
-        Remove the session information.
-        """
-        for session in self._session_params:
-            url = raw_url.lower()
-            begin = url.find(session)
-            while begin > -1:
-                end = url.find('&', begin)
-                if end == -1:
-                    raw_url = raw_url[:begin]
-                else:
-                    raw_url = "%s%s" % (raw_url[:begin], raw_url[end:])
-                url = raw_url.lower()
-                begin = url.find(session)
-
-        return raw_url

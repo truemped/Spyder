@@ -121,7 +121,6 @@ SPYDER_EXTRACTOR_PIPELINE = [
     'spyder.processor.httpextractor.HttpExtractor',
 ]
 
-
 # Default HTML Extractor settings
 # maximum number of chars an element name may have
 REGEX_LINK_XTRACTOR_MAX_ELEMENT_LENGTH = 64
@@ -132,6 +131,7 @@ SPYDER_SCOPER_PIPELINE = [
     'spyder.processor.scoper.RegexScoper',
     'spyder.processor.stripsessions.StripSessionIds',
     'spyder.processor.cleanupquery.CleanupQueryString',
+    'spyder.processor.stripqueryparams.StripQueryParams',
 ]
 
 # List of positive regular expressions for the crawl scope
@@ -142,15 +142,15 @@ REGEX_SCOPE_POSITIVE = [
 REGEX_SCOPE_NEGATIVE = [
 ]
 
-
 # List of 404 redirects
 HTTP_EXTRACTOR_404_REDIRECT = [
 ]
 
-
 # Whether to remove anchors from extracted urls.
 REMOVE_ANCHORS_FROM_LINKS = True
 
+# a list of query parameter names that should be removed from extracted urls
+REMOVE_QUERY_NAMES = []
 
 # define a parent directory for unix sockets that will be created
 PARENT_SOCKET_DIRECTORY = "/tmp"

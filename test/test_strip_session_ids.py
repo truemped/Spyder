@@ -33,22 +33,22 @@ class StripSessionIdsTest(unittest.TestCase):
         url = "http://pREis.de/traeger/index.php?sid=8429fb3ae210a2a0e28800b7f48d90f2"
 
         self.assertEqual("http://pREis.de/traeger/index.php?",
-                s._remove_session_ids(url))
+                s._remove_query_params(url))
 
         url = "http://preis.de/traeger/index.php?jsessionid=8429fb3ae210a2a0e28800b7f48d90f2"
 
         self.assertEqual("http://preis.de/traeger/index.php?",
-                s._remove_session_ids(url))
+                s._remove_query_params(url))
 
         url = "http://preis.de/traeger/index.php?phpsessid=8429fb3ae210a2a0e28800b7f48d90f2"
 
         self.assertEqual("http://preis.de/traeger/index.php?",
-                s._remove_session_ids(url))
+                s._remove_query_params(url))
 
         url = "http://preis.de/traeger/index.php?aspsessionid=8429fb3ae210a2a0e28800b7f48d90f2"
 
         self.assertEqual("http://preis.de/traeger/index.php?",
-                s._remove_session_ids(url))
+                s._remove_query_params(url))
 
     def test_that_with_uri_works(self):
 
