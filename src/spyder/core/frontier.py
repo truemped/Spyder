@@ -56,7 +56,7 @@ PROTOCOLS_DEFAULT_PORT = {
 }
 
 
-class AbstractBaseFrontier(object, LoggingMixin):
+class AbstractBaseFrontier(LoggingMixin):
     """
     A base class for implementing frontiers.
 
@@ -74,7 +74,11 @@ class AbstractBaseFrontier(object, LoggingMixin):
         unique uri filter. For very large crawls you might want to use a
         larger hash function (`sha512`, e.g.)
         """
-        LoggingMixin.__init__(self, log_handler, settings.LOG_LEVEL_MASTER)
+        super(AbstractBaseFrontier, self).__init__(log_handler,
+            settings.LOG_LEVEL_MASTER)
+
+        self._settings = settings
+
         # front end queue
         self._prioritizer = prioritizer
         self._front_end_queues = front_end_queues
@@ -631,25 +635,25 @@ class MultipleHostFrontier(AbstractBaseFrontier):
         Crawling was successful, now update the politeness rules.
         """
         self._update_politeness(curi)
-        AbstractBaseFrontier.process_successful_crawl(self, curi)
+        super(MultipleHostFrontier, self).process_successful_crawl(curi)
 
     def process_not_found(self, curi):
         """
         The page does not exist anymore!
         """
         self._update_politeness(curi)
-        AbstractBaseFrontier.process_not_found(self, curi)
+        super(MultipleHostFrontier, self).process_not_found(curi)
 
     def process_redirect(self, curi):
         """
         There was a redirect.
         """
         self._update_politeness(curi)
-        AbstractBaseFrontier.process_server_error(self, curi)
+        super(MultipleHostFrontier, self).process_redirect(curi)
 
     def process_server_error(self, curi):
         """
         Punish any server errors in the budget for this queue.
         """
         self._update_politeness(curi)
-        AbstractBaseFrontier.process_server_error(self, curi)
+        super(MultipleHostFrontier, self).process_server_error(curi)

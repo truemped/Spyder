@@ -22,7 +22,7 @@ A simple pyzmq logging mixin.
 import logging
 
 
-class LoggingMixin:
+class LoggingMixin(object):
     """
     Simple mixin for adding logging methods to a class.
     """

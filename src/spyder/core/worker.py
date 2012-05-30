@@ -32,7 +32,7 @@ from spyder.core.log import LoggingMixin
 from spyder.core.messages import DataMessage
 
 
-class ZmqWorker(object, LoggingMixin):
+class ZmqWorker(LoggingMixin):
     """
     This is the ZMQ worker implementation.
 

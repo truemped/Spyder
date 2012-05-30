@@ -33,7 +33,7 @@ from spyder.core.messages import DataMessage
 from spyder.core.log import LoggingMixin
 
 
-class ZmqMaster(object, LoggingMixin):
+class ZmqMaster(LoggingMixin):
     """
     This is the ZMQ Master implementation.
 
