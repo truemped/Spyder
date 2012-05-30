@@ -214,8 +214,8 @@ class AbstractBaseFrontier(LoggingMixin):
             # only reschedule if it has been crawled before
             (prio, next_crawl_date) = self._reschedule_uri(curi)
         else:
-            (prio, next_crawl_date) = (1,
-                    time.mktime(datetime.now(self._timezone).timetuple()))
+            # new urls are prefered over know ones.
+            (prio, next_crawl_date) = (1, 10000)
 
         return (curi.url, etag, mod_date, next_crawl_date, prio)
 

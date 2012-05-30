@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import logging
 from logging import StreamHandler
 
 from datetime import datetime
@@ -26,7 +25,7 @@ import sys
 
 from spyder.core.frontier import MultipleHostFrontier
 from spyder.core.settings import Settings
-from spyder.time import serialize_date_time, deserialize_date_time
+from spyder.time import serialize_date_time
 from spyder.thrift.gen.ttypes import CrawlUri
 
 
@@ -77,14 +76,11 @@ class MultipleHostFrontierTest(unittest.TestCase):
 
         frontier = MultipleHostFrontier(s, StreamHandler(sys.stdout))
 
-        now = datetime(*datetime.fromtimestamp(time.time()).timetuple()[0:6])
         curi1 = CrawlUri("http://localhost")
         curi1.current_priority = 2
         curi1.req_time = 0.4
 
         frontier.add_uri(curi1)
-
-        cur = frontier._front_end_queues._cursor
 
         curi2 = CrawlUri("http://foreignhost")
         curi2.current_priority = 1
@@ -124,7 +120,7 @@ class MultipleHostFrontierTest(unittest.TestCase):
         self.assertEquals(4, frontier._budget_politeness[q2])
         frontier._cleanup_budget_politeness()
         self.assertEquals(4, frontier._budget_politeness[q2])
- 
+
         frontier._update_heap()
         self.assertEqual(1, len(frontier._current_queues))
 
