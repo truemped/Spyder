@@ -96,5 +96,5 @@ def main(settings):
         LOGGERS['master'].debug("Caught a ZMQError. Hopefully during shutdown")
         LOGGERS['master'].debug(traceback.format_exc())
 
-    log_stream.close()
+    log_sub.close()
     ctx.term()

@@ -39,7 +39,7 @@ import traceback
 
 import zmq
 from zmq.core.error import ZMQError
-from zmq.eventloop.ioloop import IOLoop
+from zmq.eventloop.ioloop import IOLoop, DelayedCallback
 from zmq.log.handlers import PUBHandler
 
 from spyder.import_util import import_class
@@ -110,8 +110,7 @@ def main(settings):
         Called from the os when a shutdown signal is fired.
         """
         master.shutdown()
-        # zmq 2.1 stops blocking calls, restart the ioloop
-        io_loop.start()
+        DelayedCallback(io_loop.stop, 1000).start()
 
     # handle kill signals
     signal.signal(signal.SIGINT, handle_shutdown_signal)
@@ -136,5 +135,7 @@ def main(settings):
 
     logger.info("process::Master is down.")
     log_pub.close()
+    publishing_socket.close()
+    receiving_socket.close()
 
     ctx.term()

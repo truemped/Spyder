@@ -176,6 +176,15 @@ def main(settings):
         zmq_logging_handler, io_loop)
     extractor.start()
 
+    def terminate():
+        for mod in [fetcher, extractor, mgmt]:
+            mod.close()
+        io_loop.stop()
+
+        logger.info("process::Houston: Worker down")
+        log_pub.close()
+        ctx.destroy()
+
     def quit_worker(raw_msg):
         """
         When the worker should quit, stop the io_loop after 2 seconds.
@@ -183,7 +192,7 @@ def main(settings):
         msg = MgmtMessage(raw_msg)
         if ZMQ_SPYDER_MGMT_WORKER_QUIT == msg.data:
             logger.info("process::We have been asked to shutdown, do so")
-            DelayedCallback(io_loop.stop, 2000, io_loop).start()
+            DelayedCallback(terminate, 2000, io_loop).start()
             ack = MgmtMessage(topic=ZMQ_SPYDER_MGMT_WORKER, identity=identity,
                     data=ZMQ_SPYDER_MGMT_WORKER_QUIT_ACK)
             mgmt._out_stream.send_multipart(ack.serialize())
@@ -217,8 +226,3 @@ def main(settings):
         logger.debug("Caught a ZMQError. Hopefully during shutdown")
         logger.debug(traceback.format_exc())
 
-    for mod in [fetcher, extractor, mgmt]:
-        mod.close()
-
-    logger.info("process::Houston: Worker down")
-    ctx.term()
