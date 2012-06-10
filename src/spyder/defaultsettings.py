@@ -67,9 +67,6 @@ SIZE_DNS_CACHE = 1000
 
 # Callback for Master processes.
 MASTER_CALLBACK = None
-# Interval for the periodic updater (surviving times where nothing is to be
-# crawled)
-MASTER_PERIODIC_UPDATE_INTERVAL = 60 * 1000
 
 
 # Frontier implementation to use

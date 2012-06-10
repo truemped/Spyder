@@ -26,10 +26,8 @@ The priority is calculated based on the timestamp it should be crawled next.
 In contrast to the :mod:`spyder.core.sqlitequeues` module, URIs in this module
 are represented as :class:`spyder.thrift.gen.ttypes.CrawlUri`.
 """
-
 import time
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from Queue import PriorityQueue, Empty, Full
 from urlparse import urlparse
@@ -265,7 +263,13 @@ class AbstractBaseFrontier(LoggingMixin):
         The implementation should really only add uris to the heap if they can
         be downloaded right away.
         """
-        pass
+        raise NotImplementedError()
+
+    def get_next_possible_crawl_timestamp(self):
+        """
+        Return the timestamp of the next possible crawl date.
+        """
+        raise NotImplementedError()
 
     def _maybe_checkpoint(self, force_checkpoint=False):
         """
@@ -409,6 +413,12 @@ class SingleHostFrontier(AbstractBaseFrontier):
                             "during update")
                     return
 
+    def get_next_possible_crawl_timestamp(self):
+        """
+        Return the timestamp of the next possible crawl date.
+        """
+        return self._next_possible_crawl
+
     def process_successful_crawl(self, curi):
         """
         Add the timebased politeness to this frontier.
@@ -528,6 +538,23 @@ class MultipleHostFrontier(AbstractBaseFrontier):
                     self._add_to_heap(next_uri, localized_next_date)
                     self._current_queues_in_heap.append(q)
 
+    def get_next_possible_crawl_timestamp(self):
+        """
+        Return the timestamp of the next possible crawl date.
+        """
+        tmin = None
+        for q in self._time_politeness:
+            t = self._time_politeness[q]
+            if q not in self._current_queues and t < q:
+                tmin = t
+
+        if not tmin:
+            tmin = time.mktime(
+                (datetime.now(self._timezone) +
+                timedelta(seconds=self._min_delay)).timetuple())
+
+        return tmin
+
     def _maybe_add_queues(self):
         """
         If there are free queue slots available, add inactive queues from the
@@ -597,7 +624,8 @@ class MultipleHostFrontier(AbstractBaseFrontier):
         Called when a queue should be crawled from now on.
         """
         self._budget_politeness[next_queue] = self._max_queue_budget
-        self._time_politeness[next_queue] = time.mktime(datetime.now(self._timezone).timetuple())
+        self._time_politeness[next_queue] = time.mktime(
+            datetime.now(self._timezone).timetuple())
         self._current_queues[next_queue] = \
             PriorityQueue(maxsize=self._max_queue_budget)
 
@@ -626,7 +654,8 @@ class MultipleHostFrontier(AbstractBaseFrontier):
         now = datetime.now(self._timezone)
         delta_seconds = max(self._delay_factor * curi.req_time,
                 self._min_delay)
-        self._time_politeness[queue] = time.mktime((now + timedelta(seconds=delta_seconds)).timetuple())
+        self._time_politeness[queue] = time.mktime(
+            (now + timedelta(seconds=delta_seconds)).timetuple())
 
         self._current_queues_in_heap.remove(queue)
 

@@ -18,10 +18,11 @@
 """
 A ZeroMQ master, i.e. the producer of URIs.
 """
+import time
 import traceback
 from Queue import Empty
 
-from zmq.eventloop.ioloop import IOLoop, PeriodicCallback
+from zmq.eventloop.ioloop import IOLoop, PeriodicCallback, DelayedCallback
 from zmq.eventloop.zmqstream import ZMQStream
 
 from spyder.core.constants import ZMQ_SPYDER_MGMT_WORKER
@@ -59,9 +60,8 @@ class ZmqMaster(LoggingMixin):
         self._running = False
         self._available_workers = []
 
-        # periodically check if there are pending URIs to crawl
-        self._periodic_update = PeriodicCallback(self._send_next_uri,
-                settings.MASTER_PERIODIC_UPDATE_INTERVAL, io_loop=io_loop)
+        self._delayed_update = DelayedCallback(self._send_next_uri, 1000,
+            io_loop=io_loop)
         # start this periodic callback when you are waiting for the workers to
         # finish
         self._periodic_shutdown = PeriodicCallback(self._shutdown_wait, 500,
@@ -75,7 +75,6 @@ class ZmqMaster(LoggingMixin):
         """
         self._mgmt.add_callback(ZMQ_SPYDER_MGMT_WORKER, self._worker_msg)
         self._in_stream.on_recv(self._receive_processed_uri)
-        self._periodic_update.start()
         self._running = True
         self._logger.debug("zmqmaster::starting...")
 
@@ -86,7 +85,6 @@ class ZmqMaster(LoggingMixin):
         """
         self._logger.debug("zmqmaster::stopping...")
         self._running = False
-        self._periodic_update.stop()
 
     def shutdown(self):
         """
@@ -160,14 +158,31 @@ class ZmqMaster(LoggingMixin):
                 try:
                     next_curi = self._frontier.get_next()
                 except Empty:
-                    # well, frontier has nothing to process right now
+                    # frontier has nothing to process right now
                     self._logger.debug("zmqmaster::Nothing to crawl right now")
+                    self._update_delayed_callback()
                     break
 
                 self._logger.info("zmqmaster::Begin crawling next URL (%s)" %
                         next_curi.url)
                 msg = DataMessage(identity=self._identity, curi=next_curi)
                 self._out_stream.send_multipart(msg.serialize())
+
+    def _update_delayed_callback(self):
+        """
+        Update the internal delayed callback with the next possible crawl date
+        from the frontier.
+        """
+        if self._delayed_update:
+            self._delayed_update.stop()
+
+        delay = self._frontier.get_next_possible_crawl_timestamp()
+        delay -= time.time()
+        delay *= 1000
+
+        self._delayed_update = DelayedCallback(self._send_next_uri, delay,
+            io_loop=self._io_loop)
+        self._delayed_update.start()
 
     def _receive_processed_uri(self, raw_msg):
         """
