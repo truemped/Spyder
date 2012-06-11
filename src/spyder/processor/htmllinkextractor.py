@@ -1,3 +1,4 @@
+# vim: set fileencoding=utf-8 :
 #
 # Copyright (c) 2011 Daniel Truemper truemped@googlemail.com
 #
@@ -42,6 +43,7 @@ source code:
 import re
 import htmlentitydefs
 
+import urllib
 import urlparse
 
 from spyder.core.constants import CURI_EXTRACTED_URLS
@@ -106,13 +108,17 @@ class DefaultHtmlLinkExtractor(object):
                     str(max_size)), re.I | re.S)
 
         self._link_extractor = re.compile(LINK_EXTRACTOR, re.I | re.S)
-        self._base_url = ""
+        self._base_url = ''
+        self._encoding = None
+        self._content_type = None
 
     def __call__(self, curi):
         """
         Actually extract links from the html content if the content type
         matches.
         """
+        (self._content_type, self._encoding) = get_content_type_encoding(curi)
+
         if not self._restrict_content_type(curi):
             return curi
 
@@ -120,10 +126,8 @@ class DefaultHtmlLinkExtractor(object):
             curi.optional_vars[CURI_EXTRACTION_FINISHED] == CURI_OPTIONAL_TRUE:
             return curi
 
-        (_type, encoding) = get_content_type_encoding(curi)
-
         try:
-            content = curi.content_body.decode(encoding)
+            content = curi.content_body.decode(self._encoding)
         except Exception:
             content = curi.content_body
 
@@ -201,6 +205,8 @@ class DefaultHtmlLinkExtractor(object):
                 continue
             if link.find("://") == -1:
                 link = urlparse.urljoin(self._base_url, link)
+
+            link = url_fix(link, self._encoding)
             links.append(link)
 
         return links
@@ -211,7 +217,7 @@ class DefaultHtmlLinkExtractor(object):
         """
         links = self._get_links(content, element_tuple)
 
-        linkstring = "\n".join(links).encode('ascii', 'replace')
+        linkstring = "\n".join(links).encode('ASCII', 'replace')
         if not CURI_EXTRACTED_URLS in curi.optional_vars:
             curi.optional_vars[CURI_EXTRACTED_URLS] = linkstring
         else:
@@ -232,8 +238,7 @@ class DefaultHtmlLinkExtractor(object):
         """
         allowed = ["text/html", "application/xhtml", "text/vnd.wap.wml",
             "application/vnd.wap.wml", "application/vnd.wap.xhtm"]
-        (ctype, _enc) = get_content_type_encoding(curi)
-        return ctype in allowed
+        return self._content_type in allowed
 
     def _unescape_html(self, link):
         """
@@ -262,3 +267,23 @@ class DefaultHtmlLinkExtractor(object):
                     pass
             return text
         return re.sub("&#?\w+;", fixup, link)
+
+
+def url_fix(s, charset='utf-8'):
+    """Sometimes you get an URL by a user that just isn't a real
+    URL because it contains unsafe characters like ' ' and so on.  This
+    function can fix some of the problems in a similar way browsers
+    handle data entered by the user:
+
+    >>> url_fix(u'http://de.wikipedia.org/wiki/Elf (Begriffsklärung)')
+    'http://de.wikipedia.org/wiki/Elf%20%28Begriffskl%C3%A4rung%29'
+
+    :param charset: The target charset for the URL if the url was
+                    given as unicode string.
+    """
+    if isinstance(s, unicode):
+        s = s.encode(charset, 'ignore')
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
+    path = urllib.quote(path, '/%')
+    qs = urllib.quote_plus(qs, ':&=')
+    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
