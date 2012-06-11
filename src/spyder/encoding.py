@@ -23,38 +23,64 @@ def get_content_type_encoding(curi):
 
     `curi` is the :class:`CrawlUri`.
     """
-    content_type = "text/plain"
-    charset = ""
+    content_type = 'text/plain'
+    charset = ''
 
-    if curi.rep_header and "Content-Type" in curi.rep_header:
+    if curi.rep_header and 'Content-Type' in curi.rep_header:
         (content_type, charset) = extract_content_type_encoding(
-                curi.rep_header["Content-Type"])
+                curi.rep_header['Content-Type'])
 
-    if charset == "" and curi.content_body and len(curi.content_body) >= 512:
-        # no charset information in the http header
-        first_bytes = curi.content_body[:512].lower()
-        ctypestart = first_bytes.find("content-type")
-        if ctypestart != -1:
-            # there is a html header
-            ctypestart = first_bytes.find("content=\"", ctypestart)
-            ctypeend = first_bytes.find("\"", ctypestart + 9)
-            return extract_content_type_encoding(
-                    first_bytes[ctypestart + 9:ctypeend])
+    if charset == '' and curi.content_body:
+        (_, e) = _detect_from_body(curi.content_body[:512].lower())
+
+        if not e:
+            # there was no information in the first 512 bytes,  try the whole text
+            (_, e) = _detect_from_body(curi.content_body.lower())
+
+        charset = e
+
+    if charset == '':
+        # wow, still no information, maybe check the byte order mark
+        if curi.content_body[:3] == '\xef\xbb\xbf':
+            charset = 'utf-8'
 
     return (content_type, charset)
+
+
+def _detect_from_body(body):
+    """
+    Try to detect the encoding from the body.
+    """
+    # no charset information in the http header
+    ctypestart = body.find('content-type')
+    if ctypestart != -1:
+        # there is a html header
+        ctypestart = body.find('content="', ctypestart)
+        ctypeend = body.find('"', ctypestart + 9)
+        return extract_content_type_encoding(
+                body[ctypestart + 9:ctypeend])
+
+    charsetstart = body.find('charset="')
+    if charsetstart != -1:
+        # there is a charset header
+        charsetstart = body.find('charset="', charsetstart)
+        charsetend = body.find('"', charsetstart + 9)
+        return (None, body[charsetstart + 9: charsetend])
+
+    return (None, None)
 
 
 def extract_content_type_encoding(content_type_string):
     """
     Extract the content type and encoding information.
     """
-    charset = ""
-    content_type = ""
-    for part in content_type_string.split(";"):
+    charset = ''
+    content_type = ''
+    for part in content_type_string.split(';'):
         part = part.strip().lower()
-        if part.startswith("charset"):
-            charset = part.split("=")[1]
-            charset = charset.replace("-", "_")
+        if part.startswith('charset'):
+            charset = part.split('=')[1]
+            charset = charset.replace('-', '_')
         else:
             content_type = part
 
