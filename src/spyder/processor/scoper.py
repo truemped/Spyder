@@ -64,11 +64,11 @@ class RegexScoper(object):
         """
         self._positive_regex = []
         for regex in settings.REGEX_SCOPE_POSITIVE:
-            self._positive_regex.append(re.compile(regex))
+            self._positive_regex.append(re.compile(regex, re.I))
 
         self._negative_regex = []
         for regex in settings.REGEX_SCOPE_NEGATIVE:
-            self._negative_regex.append(re.compile(regex))
+            self._negative_regex.append(re.compile(regex, re.I))
 
     def __call__(self, curi):
         """
