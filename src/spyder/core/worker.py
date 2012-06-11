@@ -79,6 +79,9 @@ class ZmqWorker(LoggingMixin):
         We have a message!
 
         `msg` is a serialized version of a `DataMessage`.
+
+        Note:: When the processing function fails with an exception, the status
+        code is set to the internal error code `810`.
         """
         message = DataMessage(msg)
 
@@ -89,9 +92,10 @@ class ZmqWorker(LoggingMixin):
         except:
             # catch any uncaught exception and only log it as CRITICAL
             self._logger.critical(
-                    "worker::Uncaught exception executing the worker for URL %s!" %
-                    (message.curi.url,))
+                "worker::Uncaught exception executing the worker for URL %s!" %
+                (message.curi.url,))
             self._logger.critical("worker::%s" % (traceback.format_exc(),))
+            message.curi.status_code = 810
 
         # finished, now send the result back to the master
         self._out_stream.send_multipart(message.serialize())

@@ -1,3 +1,4 @@
+# vim: set fileencoding=utf-8 :
 #
 # Copyright (c) 2011 Daniel Truemper truemped@googlemail.com
 #
@@ -204,8 +205,8 @@ class ZmqMaster(LoggingMixin):
             elif 400 <= msg.curi.status_code < 500:
                 # some kind of error where the resource could not be found.
                 self._frontier.process_not_found(msg.curi)
-            elif 500 <= msg.curi.status_code < 600:
-                # some kind of server error
+            elif 500 <= msg.curi.status_code:
+                # some kind of server or processing error
                 self._frontier.process_server_error(msg.curi)
         except:
             self._logger.critical("zmqmaster::Uncaught exception in the sink")
