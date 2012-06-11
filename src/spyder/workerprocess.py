@@ -189,7 +189,10 @@ def main(settings):
         """
         When the worker should quit, stop the io_loop after 2 seconds.
         """
-        msg = MgmtMessage(raw_msg)
+        if not isinstance(raw_msg, MgmtMessage):
+            msg = MgmtMessage(raw_msg)
+        else:
+            msg = raw_msg
         if ZMQ_SPYDER_MGMT_WORKER_QUIT == msg.data:
             logger.info("process::We have been asked to shutdown, do so")
             DelayedCallback(terminate, 2000, io_loop).start()
