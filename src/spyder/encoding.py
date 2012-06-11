@@ -39,7 +39,7 @@ def get_content_type_encoding(curi):
 
         charset = e
 
-    if charset == '':
+    if charset == '' and curi.content_body:
         # wow, still no information, maybe check the byte order mark
         if curi.content_body[:3] == '\xef\xbb\xbf':
             charset = 'utf-8'

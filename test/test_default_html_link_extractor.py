@@ -26,13 +26,17 @@ from spyder.thrift.gen.ttypes import CrawlUri
 
 class HtmlLinkExtractorTest(unittest.TestCase):
 
-    def test_that_content_type_restriction_works(self):
+    def test_that_content_type_restriction_works_with_html(self):
         xtor = DefaultHtmlLinkExtractor(Settings())
-
         curi = CrawlUri()
         curi.rep_header = dict()
         curi.rep_header["Content-Type"] = "text/html"
         self.assertTrue(xtor._restrict_content_type(curi))
+
+    def test_that_content_type_restriction_works_with_strange_stuff(self):
+        xtor = DefaultHtmlLinkExtractor(Settings())
+        curi = CrawlUri()
+        curi.rep_header = dict()
         curi.rep_header["Content-Type"] = "pille/palle"
         self.assertFalse(xtor._restrict_content_type(curi))
 

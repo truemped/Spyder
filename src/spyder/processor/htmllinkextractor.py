@@ -238,6 +238,10 @@ class DefaultHtmlLinkExtractor(object):
         """
         allowed = ["text/html", "application/xhtml", "text/vnd.wap.wml",
             "application/vnd.wap.wml", "application/vnd.wap.xhtm"]
+
+        if not self._content_type:
+            (self._content_type, self._encoding) = \
+                get_content_type_encoding(curi)
         return self._content_type in allowed
 
     def _unescape_html(self, link):
