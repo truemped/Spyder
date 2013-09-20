@@ -18,52 +18,63 @@
 #
 #
 
-from setuptools import setup, find_packages
-import re
+from imp import load_source
+import os
+from setuptools import setup
+import sys
 
-__version__ = re.search( "__version__\s*=\s*'(.*)'", open('src/spyder/__init__.py').read(), re.M).group(1)
-assert __version__
+
+init = load_source('init', os.path.join('spyder', '__init__.py'))
+PY2 = sys.version_info[0] == 2
 
 long_description = open("README.rst").read()
-assert long_description
 
-tests_require = ['coverage>=3.4', 'nose==1.1.2']
+tests_require = [
+    'mock',
+    'pytest',
+    'pytest-cov',
+]
 
-setup(
-    name = "spyder",
-    version = __version__,
+if sys.version_info < (2, 7):
+    tests_require.append('unittest2')
+
+
+extras_require = {}
+extras_require['test'] = tests_require
+extras_require['futures'] = ''
+if PY2:
+    extras_require['futures'] = 'futures == 2.1.3'
+
+
+setup (
+    name='spyder',
+    version='.'.join([str(v) for v in init.__version__]),
+
+    author='Daniel Truemper',
+    author_email='truemped@gmail.com',
+    url='http://spyder.readthedocs.org/',
+    license="http://www.apache.org/licenses/LICENSE-2.0",
     description = "A python spider",
     long_description = long_description,
-    author = "Daniel Truemper",
-    author_email = "truemped@googlemail.com",
-    url = "",
-    license = "Apache 2.0",
-    package_dir = { '' : 'src' },
-    packages = find_packages('src'),
-    include_package_data = True,
-    test_suite = 'nose.collector',
-    install_requires = [
-        'pyzmq>=2.0.10',
-        'tornado>=1.1',
-        'thrift>=0.5.0',
-        'pycurl>=7.19.0',
-        'pytz>=2010o',
-        'brownie>=0.4.1',
+
+    packages=['spyder'],
+
+    install_requires=[
+        'tornado >= 3.1.0',
+        'schematics >= 0.6.0',
+        'scales >= 1.0.3',
+        'pyzmq >= 13.1.0',
     ],
-    tests_require = tests_require,
-    extras_require = {'test': tests_require},
-    entry_points = {
-        'console_scripts' : [
-            'spyder = spyder:spyder_admin_main',
-        ]
-    },
-    classifiers = [
+    tests_require=tests_require,
+    extras_require=extras_require,
+
+    classifiers=[
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Information Technology',
         'License :: OSI Approved :: Apache Software License',
-        'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
     ]
