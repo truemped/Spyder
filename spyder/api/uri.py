@@ -18,8 +18,8 @@
 from __future__ import absolute_import, division, print_function, with_statement
 
 from schematics.models import Model
-from schematics.types import StringType, IntType, BooleanType
-from schematics.types.compound import DictType, ListType
+from schematics.types import StringType, IntType, BooleanType, DateTimeType
+from schematics.types.compound import ModelType, ListType
 
 
 class CrawlUri(Model):
@@ -34,13 +34,37 @@ class CrawlUri(Model):
     ignored = BooleanType()
 
 
+class ResponseHeaders(Model):
+    '''Response headers that are used in the crawler logic.'''
+    location = StringType()
+    date = DateTimeType()
+    expires = DateTimeType()
+    cache_control = StringType()
+    last_modified = DateTimeType()
+    etag = StringType()
+    content_type = StringType()
+
+    @classmethod
+    def from_headers(cls, headers):
+        h = cls()
+        h.location = headers.get('Location', None)
+        h.etag = headers.get('Etag', None)
+        h.content_type = headers.get('Content-Type', None)
+        h.date = headers.get('Date', None)
+        h.expires = headers.get('Expires', None)
+        h.last_modified = headers.get('Last-Modified', None)
+        h.cache_control = headers.get('Cache-Control', None)
+        return h
+
+
 class CrawledUri(CrawlUri):
     '''A crawled uri also contains some metadata and the contents from the
     stored page.
     '''
     links = ListType(StringType())
-    resp_headers = DictType()
+    resp_headers = ModelType(ResponseHeaders)
     resp_body = StringType()
+    resp_code = IntType()
 
     @classmethod
     def from_curi(cls, curi):
